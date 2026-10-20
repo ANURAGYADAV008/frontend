@@ -65,18 +65,6 @@ Do not put OpenAI or LangSmith keys in this frontend. Only the API URL belongs h
 - Amazon product image fallback when an image is unavailable
 - Local conversation ID reused across refreshes
 
-## Current API limitations
-
-These are intentional notes for the next backend iteration, not frontend bugs:
-
-1. **The bag is read-only from the UI.** Items are added or removed by asking the assistant. There are no `POST /cart/items`, `PATCH`, or `DELETE` endpoints yet.
-2. **Product cards have no `product_id`.** `used_context` currently returns only `image_url`, `price`, and `description`. The Add button therefore sends a chat prompt rather than a direct cart request.
-3. **`thread_id` is also the cart ID.** Starting a new chat in the header creates a new thread and therefore a new empty bag.
-4. **There is no conversation-history endpoint.** Messages are persisted in the browser; the LangGraph memory lives in Postgres but is not exposed for loading into the UI.
-5. **There is no streaming endpoint yet.** The assistant loading stages are a client-side experience while the synchronous `/rag` request is running.
-6. **Feedback is not wired up.** The API currently returns `trace_id: null`, so LangSmith feedback would not be recorded.
-7. **No cart refresh endpoint.** On a fresh browser or another device, the bag appears empty until the next `/rag` response.
-
 ## Recommended backend follow-ups
 
 - Add `product_id`, `title`, `average_rating`, and `currency` to `used_context`, and deduplicate products per turn.
