@@ -24,11 +24,31 @@ async function parseError(response: Response): Promise<ApiError> {
   const requestId = response.headers.get('X-Request-ID') ?? undefined
   const unavailable = [502, 503, 504].includes(response.status)
   let message = unavailable
-    ? 'The assistant API is unavailable. Make sure FastAPI is running on port 8002.'
+    ? 'The assistant API is temporarily unavailable. Please try again in a moment.'
     : `The assistant returned an error (${response.status}).`
 
+  let bodyText = ''
   try {
-    const body = (await response.json()) as {
+    bodyText = await response.text()
+  } catch {
+    // Ignore unreadable bodies and keep the status-based fallback.
+  }
+
+  // Vercel Deployment Protection answers API calls with a login page instead
+  // of JSON, so surface the real cause rather than a generic parse error.
+  if (
+    response.url.includes('vercel.com') ||
+    bodyText.includes('Protected by Vercel Authentication') ||
+    bodyText.includes('Log in to Vercel')
+  ) {
+    return new ApiError(
+      'The backend deployment is protected by Vercel Authentication. Disable Deployment Protection for the backend project in Vercel, then try again.',
+      { status: response.status, requestId },
+    )
+  }
+
+  try {
+    const body = JSON.parse(bodyText) as {
       detail?: string | Array<{ msg?: string }>
       message?: string
     }
@@ -86,7 +106,7 @@ export async function sendChat(
 
     if (error instanceof TypeError) {
       throw new ApiError(
-        'Could not reach the assistant. Make sure the FastAPI server is running on port 8002.',
+        'Could not reach the assistant API. Check the backend URL and make sure the deployment is running.',
       )
     }
 
@@ -105,7 +125,16 @@ export async function checkHealth(): Promise<boolean> {
       method: 'GET',
       cache: 'no-store',
     })
-    return response.ok
+
+    if (!response.ok) return false
+
+    // A protected deployment redirects to the Vercel login page, which still
+    // returns HTTP 200. Require the API's JSON health payload instead.
+    const contentType = response.headers.get('content-type') ?? ''
+    if (!contentType.includes('application/json')) return false
+
+    const body = (await response.json()) as { status?: string }
+    return body.status === 'ok'
   } catch {
     return false
   }

@@ -6,7 +6,11 @@ Built with **React 19 + TypeScript + Vite + Tailwind CSS 4**.
 
 ## Run locally
 
-The backend must be running on port `8002` first.
+`npm run dev` uses the deployed backend configured in `.env.development`. To run
+against a local FastAPI server instead, remove `.env.development` (the Vite proxy
+then forwards `/api` to `http://localhost:8002`).
+
+For a local backend, it must be running on port `8002` first.
 
 ```powershell
 # Terminal 1 — backend
@@ -33,6 +37,8 @@ Open **http://localhost:5173**.
 
 ## API connection
 
+### Local development
+
 During development, the app calls `/api/*` and Vite proxies it to FastAPI:
 
 ```text
@@ -42,13 +48,27 @@ Vite    → http://localhost:8002/rag
 
 This is configured in `vite.config.ts` and means **no CORS changes are needed for local development**.
 
-For production, put Nginx in front of the Vite build and proxy `/api/` to the API container.
+### Deployed backend
 
-If you want to call FastAPI directly, add CORS middleware to the backend and set:
+`npm run build` loads `.env.production`, which points the app at the deployed FastAPI backend:
 
 ```ini
-VITE_API_URL=http://localhost:8002
+VITE_API_URL=https://amazon-ecommerce-anurag-yadavs-projects-d06c16b1.vercel.app
 ```
+
+This is the project's stable production alias. The per-deployment URL
+(`https://amazon-ecommerce-<deployment-id>-...vercel.app`) changes on every deploy,
+so avoid hard-coding it.
+
+The backend must allow the frontend origin through CORS (already configured in
+`amazon_ecommerce/api/app.py`; `*.vercel.app` and the local Vite ports are allowed).
+
+If the backend deployment URL changes, update `.env.production` or set
+`VITE_API_URL` in the frontend hosting dashboard, then rebuild.
+
+> **Vercel Deployment Protection must be disabled for the backend project.**
+> Otherwise every API request is answered with the Vercel login page instead of
+> JSON, and the UI shows "API offline".
 
 Do not put OpenAI or LangSmith keys in this frontend. Only the API URL belongs here.
 

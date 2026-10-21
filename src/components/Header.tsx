@@ -27,7 +27,7 @@ const statusStyles = {
     dot: 'bg-red-500',
     text: 'API offline',
     className: 'text-red-600',
-    title: 'FastAPI is not reachable. Start it on port 8002.',
+    title: 'The assistant API is not reachable.',
   },
 } satisfies Record<
   ApiStatus,
