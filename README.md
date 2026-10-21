@@ -39,26 +39,28 @@ Open **http://localhost:5173**.
 
 ### Local development
 
-During development, the app calls `/api/*` and Vite proxies it to FastAPI:
+`npm run dev` loads `.env.development`, which points the app at the deployed backend.
+If you remove that file, the app calls `/api/*` and Vite proxies it to a local FastAPI server:
 
 ```text
 Browser → http://localhost:5173/api/rag
 Vite    → http://localhost:8002/rag
 ```
 
-This is configured in `vite.config.ts` and means **no CORS changes are needed for local development**.
+That proxy is configured in `vite.config.ts` and means **no CORS changes are needed for local development**.
 
 ### Deployed backend
 
 `npm run build` loads `.env.production`, which points the app at the deployed FastAPI backend:
 
 ```ini
-VITE_API_URL=https://amazon-ecommerce-anurag-yadavs-projects-d06c16b1.vercel.app
+VITE_API_URL=https://amazon-ecommerce-a4w5adfk4-anurag-yadavs-projects-d06c16b1.vercel.app
 ```
 
-This is the project's stable production alias. The per-deployment URL
-(`https://amazon-ecommerce-<deployment-id>-...vercel.app`) changes on every deploy,
-so avoid hard-coding it.
+This is a deployment-specific URL, so it changes whenever the backend is redeployed.
+Copy the latest URL from Vercel → Deployments and update both env files when that happens.
+If the frontend project defines `VITE_API_URL` in its Vercel settings, that value overrides
+`.env.production` — update it there as well.
 
 The backend must allow the frontend origin through CORS (already configured in
 `amazon_ecommerce/api/app.py`; `*.vercel.app` and the local Vite ports are allowed).
